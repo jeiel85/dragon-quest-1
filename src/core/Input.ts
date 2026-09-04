@@ -53,6 +53,18 @@ export class Input {
       btn.addEventListener('mouseup', release);
     });
 
+    // 캔버스 클릭/탭 시 Action(Space/Z) 트리거 지원
+    const canvas = document.getElementById('game-canvas');
+    if (canvas) {
+      const triggerAction = (e: Event) => {
+        this.keysJustPressed.add('Space');
+      };
+      canvas.addEventListener('click', triggerAction);
+      canvas.addEventListener('touchstart', (e) => {
+        this.keysJustPressed.add('Space');
+      }, { passive: true });
+    }
+
     // 모바일 A/B 버튼 바인딩
     document.querySelectorAll('.round-btn').forEach(btn => {
       const key = btn.getAttribute('data-key');

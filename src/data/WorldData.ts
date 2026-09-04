@@ -46,10 +46,10 @@ function getTantegelThrone(): GameMap {
     tiles[y][w - 1] = TileType.BRICK_WALL;
   }
 
-  // 왕좌 융단 & 기둥
+  // 왕좌 융단 & 통로
   for (let y = 3; y <= 9; y++) {
-    tiles[y][7] = TileType.BARRIER; // 붉은 레드 카펫 대체
-    tiles[y][8] = TileType.BARRIER;
+    tiles[y][7] = TileType.STONE_FLOOR;
+    tiles[y][8] = TileType.STONE_FLOOR;
   }
 
   // 보물 창고 방
