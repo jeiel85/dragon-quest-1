@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>드래곤 퀘스트 1 (Dragon Quest I: 勇者闘悪竜) - 100% 완전 재현 웹 RPG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --nes-black: #000000;
+      --nes-white: #ffffff;
+      --nes-border: #f8f8f8;
+      --gold-color: #ffd700;
+      --hp-color: #00ff66;
+      --mp-color: #33ccff;
+      --danger-color: #ff3333;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #0a0a10;
+      color: var(--nes-white);
+      font-family: 'DotGothic16', 'Press Start 2P', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+
+    #app-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 900px;
+      padding: 10px;
+    }
+
+    /* 상단 대시보드 헤더 */
+    .top-header {
+      width: 100%;
+      background: #111422;
+      border: 3px double #4e5a88;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    .game-title-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: bold;
+      color: var(--gold-color);
+      font-size: 14px;
+      letter-spacing: 0.5px;
+    }
+
+    .game-title-badge span {
+      background: #8b0000;
+      color: #fff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .control-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .btn {
+      background: #20263f;
+      color: #fff;
+      border: 2px solid #5a699b;
+      padding: 5px 10px;
+      font-size: 11px;
+      font-family: inherit;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn:hover {
+      background: #343e67;
+      border-color: #8c9cd4;
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn-auto {
+      background: #1f4529;
+      border-color: #2ed573;
+      color: #7bed9f;
+      font-weight: bold;
+    }
+
+    .btn-auto.active {
+      background: #2ed573;
+      border-color: #fff;
+      color: #000;
+      box-shadow: 0 0 10px #2ed573;
+      animation: pulse-glow 1.5s infinite;
+    }
+
+    @keyframes pulse-glow {
+      0% { box-shadow: 0 0 4px #2ed573; }
+      50% { box-shadow: 0 0 14px #2ed573; }
+      100% { box-shadow: 0 0 4px #2ed573; }
+    }
+
+    .btn-speed {
+      background: #3b2c15;
+      border-color: #ffa502;
+      color: #ffc048;
+    }
+
+    .btn-danger {
+      background: #461b1b;
+      border-color: #ff4757;
+      color: #ff6b81;
+    }
+
+    /* 캔버스 래퍼 & CRT 효과 */
+    #canvas-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 640px;
+      aspect-ratio: 4 / 3;
+      background: #000;
+      border: 4px solid #333;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.9), 0 0 10px rgba(78, 90, 136, 0.3);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    canvas#game-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    /* CRT 스캔라인 오버레이 (옵션) */
+    .crt-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 4px;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    /* 하단 상태바 및 AI 실시간 알림 패널 */
+    .ai-telemetry {
+      width: 100%;
+      max-width: 640px;
+      background: #111422;
+      border: 2px solid #333a56;
+      border-radius: 6px;
+      margin-top: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #aaa;
+    }
+
+    .ai-status-text {
+      color: #69d2e7;
+      font-weight: bold;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 75%;
+    }
+
+    /* 모바일 가상 패드 */
+    #virtual-controller {
+      display: none;
+      width: 100%;
+      max-width: 640px;
+      margin-top: 10px;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background: rgba(20, 24, 38, 0.85);
+      border-radius: 12px;
+      border: 1px solid #3d4766;
+    }
+
+    @media (max-width: 768px) {
+      #virtual-controller {
+        display: flex;
+      }
+    }
+
+    .dpad-container {
+      position: relative;
+      width: 140px;
+      height: 140px;
+    }
+
+    .dpad-btn {
+      position: absolute;
+      background: #2d3753;
+      border: 2px solid #576997;
+      color: #fff;
+      font-size: 18px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .dpad-btn:active {
+      background: #576997;
+    }
+
+    .dpad-up    { top: 0; left: 45px; width: 50px; height: 45px; }
+    .dpad-down  { bottom: 0; left: 45px; width: 50px; height: 45px; }
+    .dpad-left  { top: 45px; left: 0; width: 45px; height: 50px; }
+    .dpad-right { top: 45px; right: 0; width: 45px; height: 50px; }
+    .dpad-center{ top: 45px; left: 45px; width: 50px; height: 50px; background: #20273a; border-radius: 0; }
+
+    .action-buttons {
+      display: flex;
+      gap: 15px;
+    }
+
+    .round-btn {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: #8b1e2a;
+      border: 3px solid #dc3545;
+      color: #fff;
+      font-size: 16px;
+      font-weight: bold;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+      cursor: pointer;
+    }
+
+    .round-btn span {
+      font-size: 9px;
+      color: #ffb8b8;
+    }
+
+    .round-btn:active {
+      background: #dc3545;
+      transform: scale(0.95);
+    }
+
+    .btn-b {
+      background: #254477;
+      border-color: #3b82f6;
+    }
+    .btn-b span {
+      color: #b8d4ff;
+    }
+    .btn-b:active {
+      background: #3b82f6;
+    }
+
+    /* 조작 안내 가이드 */
+    .controls-guide {
+      width: 100%;
+      max-width: 640px;
+      margin-top: 10px;
+      font-size: 11px;
+      color: #8892b0;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 0 6px;
+    }
+
+    .guide-item {
+      background: rgba(255,255,255,0.05);
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .guide-item kbd {
+      background: #2b354f;
+      color: #ffd700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      border: 1px solid #4a5b88;
+      font-family: inherit;
+    }
+  </style>
+</head>
+<body>
+  <div id="app-container">
+    <!-- 상단 헤더 및 퀵 액션 바 -->
+    <header class="top-header">
+      <div class="game-title-badge">
+        <span>1986 FC/NES</span>
+        ⚔️ DRAGON QUEST I : 알레프갈드의 용사
+      </div>
+      <div class="control-actions">
+        <button id="btn-audio-toggle" class="btn" title="사운드 ON/OFF">🔊 BGM ON</button>
+        <button id="btn-auto-play" class="btn btn-auto" title="스마트 AI 자동 퀘스트/파밍 진행">🤖 AI 자동진행 OFF</button>
+        <button id="btn-speed" class="btn btn-speed" title="게임 진행 속도 (1x ~ 5x)">⚡ 1x</button>
+        <button id="btn-crt" class="btn" title="CRT 브라운관 스캔라인 토글">📺 CRT</button>
+        <button id="btn-cheat" class="btn" title="용왕 직행 / 레벨 업 치트">⭐ Lv UP</button>
+        <button id="btn-save" class="btn" title="진행상황 저장">💾 저장</button>
+        <button id="btn-reset" class="btn btn-danger" title="처음부터 다시 시작">🔄 리셋</button>
+      </div>
+    </header>
+
+    <!-- 게임 뷰포트 캔버스 -->
+    <div id="canvas-wrapper">
+      <canvas id="game-canvas" width="256" height="240"></canvas>
+      <div id="crt-scanlines" class="crt-overlay"></div>
+    </div>
+
+    <!-- AI 상태 텔레메트리 바 -->
+    <div class="ai-telemetry">
+      <div>AI 상태: <span id="ai-status" class="ai-status-text">수동 조작 모드 (키보드 또는 터치)</span></div>
+      <div id="game-location" style="color: #ffd700;">탄타겔 성 1층</div>
+    </div>
+
+    <!-- 모바일 가상 게임패드 -->
+    <div id="virtual-controller">
+      <div class="dpad-container">
+        <div class="dpad-btn dpad-up" data-key="ArrowUp">▲</div>
+        <div class="dpad-btn dpad-down" data-key="ArrowDown">▼</div>
+        <div class="dpad-btn dpad-left" data-key="ArrowLeft">◀</div>
+        <div class="dpad-btn dpad-right" data-key="ArrowRight">▶</div>
+        <div class="dpad-center"></div>
+      </div>
+      <div class="action-buttons">
+        <div class="round-btn btn-b" id="vbtn-b" data-key="KeyX">
+          B
+          <span>취소/메뉴</span>
+        </div>
+        <div class="round-btn" id="vbtn-a" data-key="KeyZ">
+          A
+          <span>결정/말걸기</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 조작법 안내 -->
+    <footer class="controls-guide">
+      <div class="guide-item">이동: <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> 또는 <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div>
+      <div class="guide-item">결정/대화/액션: <kbd>Z</kbd> / <kbd>Enter</kbd> / <kbd>Space</kbd></div>
+      <div class="guide-item">메뉴/취소: <kbd>X</kbd> / <kbd>Esc</kbd></div>
+      <div class="guide-item">AI 자동진행: <kbd>A</kbd> 키 토글</div>
+    </footer>
+  </div>
+
+  <script type="module" src="./src/main.ts"></script>
+</body>
+</html>
