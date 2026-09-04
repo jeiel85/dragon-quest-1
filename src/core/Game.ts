@@ -37,6 +37,12 @@ export class Game {
   private animFrame: number = 0;
   private animTimer: number = 0;
 
+  // 방향키 홀드 연속 이동 (Continuous Movement) 타이머
+  private moveHoldTimer: number = 0;
+  private lastMoveDir: Direction | null = null;
+  private readonly MOVE_INITIAL_DELAY: number = 0.18; // 첫 발자국 후 연속 걷기 전 딜레이 (180ms)
+  private readonly MOVE_REPEAT_INTERVAL: number = 0.11; // 연속 걷기 주기 (110ms)
+
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d')!;
@@ -119,7 +125,7 @@ export class Game {
           break;
 
         case 'FIELD':
-          this.handleFieldInput();
+          this.handleFieldInput(dt);
           break;
 
         case 'BATTLE':
@@ -143,19 +149,52 @@ export class Game {
     this.updateLocationBadge();
   }
 
-  // --- 필드 조작 처리 ---
-  private handleFieldInput() {
-    if (this.autoPilot.enabled) return; // AI 모드 시 수동 입력 바이패스
+  // --- 필드 조작 처리 (방향키 꾹 누르면 연속 이동 지원) ---
+  private handleFieldInput(dt: number) {
+    if (this.autoPilot.enabled) {
+      this.lastMoveDir = null;
+      this.moveHoldTimer = 0;
+      return;
+    }
 
-    // 이동 처리
-    if (this.input.isDirectionJustPressed('up')) {
-      this.tryMoveHero('up');
-    } else if (this.input.isDirectionJustPressed('down')) {
-      this.tryMoveHero('down');
-    } else if (this.input.isDirectionJustPressed('left')) {
-      this.tryMoveHero('left');
-    } else if (this.input.isDirectionJustPressed('right')) {
-      this.tryMoveHero('right');
+    // 현재 활성화된 방향 확인 (새로 눌린 키 우선)
+    const directions: Direction[] = ['up', 'down', 'left', 'right'];
+    let activeDir: Direction | null = null;
+
+    for (const dir of directions) {
+      if (this.input.isDirectionJustPressed(dir)) {
+        activeDir = dir;
+        break;
+      }
+    }
+
+    if (!activeDir) {
+      for (const dir of directions) {
+        if (this.input.isDirectionPressed(dir)) {
+          activeDir = dir;
+          break;
+        }
+      }
+    }
+
+    if (activeDir) {
+      if (activeDir !== this.lastMoveDir) {
+        // 새 방향으로 누르기 시작: 즉시 1보 이동 및 딜레이 설정
+        this.lastMoveDir = activeDir;
+        this.moveHoldTimer = this.MOVE_INITIAL_DELAY;
+        this.tryMoveHero(activeDir);
+      } else {
+        // 계속 꾹 누르고 있는 상태: 주기적으로 연속 이동
+        this.moveHoldTimer -= dt;
+        if (this.moveHoldTimer <= 0) {
+          this.tryMoveHero(activeDir);
+          this.moveHoldTimer = this.MOVE_REPEAT_INTERVAL;
+        }
+      }
+    } else {
+      // 키에서 손을 뗌
+      this.lastMoveDir = null;
+      this.moveHoldTimer = 0;
     }
 
     // 결정 / 말걸기 / 상호작용
