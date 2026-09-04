@@ -10,6 +10,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   const game = new Game(canvas);
+  (window as any).game = game;
   game.start();
 
   // 브라우저 AudioContext 자동 재생 정책 대응: 캔버스 터치/클릭 시 활성화

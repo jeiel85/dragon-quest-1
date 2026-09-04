@@ -16,6 +16,7 @@ export type AIObjective =
   | 'BUY_KEYS'
   | 'LOOT_SUN_STONE'
   | 'GET_FAIRY_FLUTE'
+  | 'GET_SILVER_HARP'
   | 'GET_STAFF_OF_RAIN'
   | 'RESCUE_PRINCESS'
   | 'DEFEAT_GOLEM'
@@ -186,6 +187,8 @@ export class AutoPilot {
       this.currentObjective = 'FARMING_EXP';
     } else if (!flags.hasFairyFlute) {
       this.currentObjective = 'GET_FAIRY_FLUTE';
+    } else if (!flags.hasSilverHarp) {
+      this.currentObjective = 'GET_SILVER_HARP';
     } else if (!flags.hasStaffOfRain) {
       this.currentObjective = 'GET_STAFF_OF_RAIN';
     } else if (!flags.rescuedPrincess) {
@@ -317,6 +320,26 @@ export class AutoPilot {
             } else {
               this.navigateToward(chest.x, chest.y);
             }
+          }
+        }
+        break;
+      }
+
+      case 'GET_SILVER_HARP': {
+        this.statusText = '가라이의 마을 영묘에서 [은의 하프] 획득 중...';
+        if (map.id === 'OVERWORLD') {
+          this.navigateToward(10, 10);
+        } else if (map.id === 'GARINHAM') {
+          const chest = map.chests.find(c => c.item === 'silver_harp');
+          if (chest && !chest.opened) {
+            if (Math.abs(hero.x - chest.x) + Math.abs(hero.y - chest.y) <= 1) {
+              hero.dir = Pathfinding.getDirection(hero, chest);
+              this.game.interactWithFront();
+            } else {
+              this.navigateToward(chest.x, chest.y);
+            }
+          } else {
+            this.navigateToward(9, 19); // 가라이 마을 출구
           }
         }
         break;

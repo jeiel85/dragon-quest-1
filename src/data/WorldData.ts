@@ -82,7 +82,7 @@ function getTantegelThrone(): GameMap {
     tiles,
     bgm: 'CASTLE',
     warps: [
-      { x: 13, y: 13, targetMap: 'TANTEGEL_1F', targetX: 13, targetY: 13 }
+      { x: 13, y: 13, targetMap: 'TANTEGEL_1F', targetX: 13, targetY: 12 }
     ],
     npcs: [
       {
@@ -172,9 +172,9 @@ function getTantegel1F(): GameMap {
     tiles,
     bgm: 'CASTLE',
     warps: [
-      { x: 13, y: 13, targetMap: 'TANTEGEL_THRONE', targetX: 13, targetY: 13 },
-      { x: 9, y: 19, targetMap: 'OVERWORLD', targetX: 25, targetY: 26 },
-      { x: 10, y: 19, targetMap: 'OVERWORLD', targetX: 25, targetY: 26 }
+      { x: 13, y: 13, targetMap: 'TANTEGEL_THRONE', targetX: 13, targetY: 12 },
+      { x: 9, y: 19, targetMap: 'OVERWORLD', targetX: 25, targetY: 27 },
+      { x: 10, y: 19, targetMap: 'OVERWORLD', targetX: 25, targetY: 27 }
     ],
     npcs: [
       {
@@ -815,10 +815,17 @@ function getOverworld(): GameMap {
   // 8. 류오의 성 (x: 25, y: 30)
   tiles[30][25] = TileType.CASTLE;
 
+  // 9. 로토의 동굴 (x: 20, y: 14)
+  tiles[14][20] = TileType.CAVE;
+
+  // 10. 리물다르 마을 (x: 45, y: 36)
+  tiles[36][45] = TileType.TOWN;
+
   // 다리들
   tiles[25][28] = TileType.BRIDGE;
   tiles[37][30] = TileType.BRIDGE;
   tiles[41][34] = TileType.BRIDGE;
+  tiles[35][43] = TileType.BRIDGE; // 리물다르 섬 연결 다리
 
   // 로토의 증표 보물 (남쪽 독 늪지대 한가운데: x: 30, y: 45)
   tiles[45][30] = TileType.CHEST;
@@ -842,12 +849,18 @@ function getOverworld(): GameMap {
       { x: 25, y: 26, targetMap: 'TANTEGEL_1F', targetX: 9, targetY: 18 },
       // 라다톰 마을 진입
       { x: 27, y: 26, targetMap: 'BRECCONARY', targetX: 1, targetY: 10 },
+      // 가라이 마을 진입
+      { x: 10, y: 10, targetMap: 'GARINHAM', targetX: 9, targetY: 18 },
       // 마이라 마을 진입
       { x: 42, y: 12, targetMap: 'KOL', targetX: 9, targetY: 16 },
+      // 로토의 동굴 진입
+      { x: 20, y: 14, targetMap: 'ERDRICK_CAVE', targetX: 2, targetY: 3 },
       // 늪지의 동굴 북쪽 진입
       { x: 30, y: 30, targetMap: 'SWAMP_CAVE', targetX: 2, targetY: 3 },
       // 늪지의 동굴 남쪽 진입
       { x: 30, y: 34, targetMap: 'SWAMP_CAVE', targetX: 2, targetY: 20 },
+      // 리물다르 마을 진입
+      { x: 45, y: 36, targetMap: 'RIMULDAR', targetX: 10, targetY: 20 },
       // 메르키드 요새 진입
       { x: 38, y: 42, targetMap: 'CANTLIN', targetX: 10, targetY: 20 },
       // 성스러운 사당 진입
@@ -877,17 +890,256 @@ function getOverworld(): GameMap {
   };
 }
 
+// --- 10. 가라이의 마을 (Garinham - 음유시인 가라이의 고향 & 은피리) ---
+function getGarinham(): GameMap {
+  const w = 20;
+  const h = 20;
+  const tiles = createMapTiles(w, h, TileType.GRASS);
+
+  for (let x = 0; x < w; x++) {
+    tiles[0][x] = TileType.TREE;
+    tiles[h - 1][x] = TileType.TREE;
+  }
+  for (let y = 0; y < h; y++) {
+    tiles[y][0] = TileType.TREE;
+    tiles[y][w - 1] = TileType.TREE;
+  }
+  tiles[h - 1][9] = TileType.STONE_FLOOR;
+  tiles[h - 1][10] = TileType.STONE_FLOOR;
+
+  // 가라이의 묘소 건물 (북쪽)
+  for (let x = 6; x <= 13; x++) {
+    tiles[2][x] = TileType.BRICK_WALL;
+    tiles[7][x] = TileType.BRICK_WALL;
+  }
+  for (let y = 2; y <= 7; y++) {
+    tiles[y][6] = TileType.BRICK_WALL;
+    tiles[y][13] = TileType.BRICK_WALL;
+  }
+  for (let y = 3; y <= 6; y++) {
+    for (let x = 7; x <= 12; x++) {
+      tiles[y][x] = TileType.STONE_FLOOR;
+    }
+  }
+  tiles[7][9] = TileType.DOOR;
+  tiles[7][10] = TileType.DOOR;
+  tiles[4][9] = TileType.CHEST; // 은피리 (은의 하프)
+
+  // 여관
+  for (let x = 2; x <= 6; x++) {
+    tiles[11][x] = TileType.BRICK_WALL;
+    tiles[15][x] = TileType.BRICK_WALL;
+  }
+  for (let y = 11; y <= 15; y++) {
+    tiles[y][2] = TileType.BRICK_WALL;
+    tiles[y][6] = TileType.BRICK_WALL;
+  }
+  tiles[15][4] = TileType.STONE_FLOOR;
+  tiles[13][3] = TileType.SHOP_COUNTER;
+
+  return {
+    id: 'GARINHAM',
+    name: '가라이 마을 (음유시인의 고향)',
+    jpName: 'ガライの町',
+    width: w,
+    height: h,
+    tiles,
+    bgm: 'TOWN',
+    warps: [
+      { x: 9, y: 19, targetMap: 'OVERWORLD', targetX: 10, targetY: 11 },
+      { x: 10, y: 19, targetMap: 'OVERWORLD', targetX: 10, targetY: 11 }
+    ],
+    npcs: [
+      {
+        id: 'garin_bard',
+        name: '가라이의 제자',
+        x: 10,
+        y: 10,
+        dir: 'down',
+        spriteIndex: 2,
+        map: 'GARINHAM',
+        dialog: ['전설의 시인 가라이 님의 영묘에는 마물을 불러모으는 신비한 [은의 하프]가 안치되어 있습니다.']
+      },
+      {
+        id: 'garin_inn',
+        name: '가라이 여관',
+        x: 3,
+        y: 12,
+        dir: 'down',
+        spriteIndex: 3,
+        map: 'GARINHAM',
+        action: 'inn',
+        dialog: ['가라이 마을 여관입니다. 숙박비는 10골드입니다.']
+      }
+    ],
+    chests: [
+      { id: 'silver_harp_chest', map: 'GARINHAM', x: 9, y: 4, item: 'silver_harp', opened: false }
+    ]
+  };
+}
+
+// --- 11. 리물다르 마을 (Rimuldar - 운하와 호수의 열쇠 마을) ---
+function getRimuldar(): GameMap {
+  const w = 22;
+  const h = 22;
+  const tiles = createMapTiles(w, h, TileType.GRASS);
+
+  // 성벽 둘레
+  for (let x = 0; x < w; x++) {
+    tiles[0][x] = TileType.TREE;
+    tiles[h - 1][x] = TileType.TREE;
+  }
+  for (let y = 0; y < h; y++) {
+    tiles[y][0] = TileType.TREE;
+    tiles[y][w - 1] = TileType.TREE;
+  }
+
+  // 내부 해자 (운하)
+  for (let y = 2; y <= 19; y++) {
+    tiles[y][2] = TileType.WATER;
+    tiles[y][19] = TileType.WATER;
+  }
+  for (let x = 2; x <= 19; x++) {
+    tiles[2][x] = TileType.WATER;
+    tiles[19][x] = TileType.WATER;
+  }
+  // 운하 다리
+  tiles[19][10] = TileType.BRIDGE;
+  tiles[h - 1][10] = TileType.STONE_FLOOR;
+
+  // 열쇠 상인의 큰 상점 (중앙)
+  for (let x = 8; x <= 14; x++) {
+    tiles[6][x] = TileType.BRICK_WALL;
+    tiles[11][x] = TileType.BRICK_WALL;
+  }
+  for (let y = 6; y <= 11; y++) {
+    tiles[y][8] = TileType.BRICK_WALL;
+    tiles[y][14] = TileType.BRICK_WALL;
+  }
+  tiles[11][11] = TileType.STONE_FLOOR;
+  tiles[9][11] = TileType.SHOP_COUNTER;
+
+  // 마법 갑옷 방어구점
+  for (let x = 4; x <= 8; x++) {
+    tiles[13][x] = TileType.BRICK_WALL;
+    tiles[17][x] = TileType.BRICK_WALL;
+  }
+  tiles[17][6] = TileType.STONE_FLOOR;
+  tiles[15][6] = TileType.SHOP_COUNTER;
+
+  return {
+    id: 'RIMULDAR',
+    name: '물의 마을 리물다르',
+    jpName: 'リムルダールの町',
+    width: w,
+    height: h,
+    tiles,
+    bgm: 'TOWN',
+    warps: [
+      { x: 10, y: 21, targetMap: 'OVERWORLD', targetX: 45, targetY: 37 }
+    ],
+    npcs: [
+      {
+        id: 'rimuldar_key',
+        name: '열쇠 명장',
+        x: 11,
+        y: 8,
+        dir: 'down',
+        spriteIndex: 4,
+        map: 'RIMULDAR',
+        action: 'key',
+        dialog: ['여기는 열쇠의 본고장 리물다르요! 마법의 열쇠를 필요한 만큼 넉넉히 챙겨가시오. (개당 26G)']
+      },
+      {
+        id: 'rimuldar_inn',
+        name: '리물다르 여관',
+        x: 16,
+        y: 15,
+        dir: 'left',
+        spriteIndex: 3,
+        map: 'RIMULDAR',
+        action: 'inn',
+        dialog: ['남쪽 섬의 리물다르 여관입니다. 숙박비는 18골드입니다.']
+      },
+      {
+        id: 'rimuldar_prophet',
+        name: '예언자',
+        x: 11,
+        y: 15,
+        dir: 'up',
+        spriteIndex: 4,
+        map: 'RIMULDAR',
+        dialog: ['태양의 돌과 비구름의 지팡이를 신성한 제단으로 가져가면, 마왕의 성으로 향하는 무지개의 다리가 열릴지어다!']
+      }
+    ],
+    chests: []
+  };
+}
+
+// --- 12. 로토의 동굴 (Erdrick's Cave - 용사 로토의 성역) ---
+function getErdrickCave(): GameMap {
+  const w = 16;
+  const h = 16;
+  const tiles = createMapTiles(w, h, TileType.STONE_FLOOR);
+
+  for (let x = 0; x < w; x++) {
+    tiles[0][x] = TileType.BRICK_WALL;
+    tiles[h - 1][x] = TileType.BRICK_WALL;
+  }
+  for (let y = 0; y < h; y++) {
+    tiles[y][0] = TileType.BRICK_WALL;
+    tiles[y][w - 1] = TileType.BRICK_WALL;
+  }
+
+  // 동굴 출구 (지상으로)
+  tiles[2][2] = TileType.STAIRS_UP;
+
+  // 중앙 전설의 석판 기념비
+  tiles[7][8] = TileType.SHRINE;
+
+  return {
+    id: 'ERDRICK_CAVE',
+    name: '로토의 동굴 (전설의 성역)',
+    jpName: 'ロトの洞窟',
+    width: w,
+    height: h,
+    tiles,
+    bgm: 'DUNGEON',
+    isDungeon: true,
+    warps: [
+      { x: 2, y: 2, targetMap: 'OVERWORLD', targetX: 20, targetY: 15 }
+    ],
+    npcs: [
+      {
+        id: 'erdrick_monument',
+        name: '로토의 비문',
+        x: 8,
+        y: 7,
+        dir: 'down',
+        spriteIndex: 4,
+        map: 'ERDRICK_CAVE',
+        dialog: [
+          '석판에 고대 문자로 글이 새겨져 있다.',
+          '"나 로토, 세 가지 신기를 모아 마왕을 봉인하고 이 땅에 빛을 가져왔노라."',
+          '"나의 피를 이어받은 용사여, 태양과 비를 모아 무지개의 물방울을 빚어 악을 심판하라!"'
+        ]
+      }
+    ],
+    chests: []
+  };
+}
+
 export const WORLD_MAPS: Record<MapType, () => GameMap> = {
   OVERWORLD: getOverworld,
   TANTEGEL_THRONE: getTantegelThrone,
   TANTEGEL_1F: getTantegel1F,
   BRECCONARY: getBrecconary,
-  GARINHAM: getBrecconary, // 공유 또는 라다톰 기반
+  GARINHAM: getGarinham,
   KOL: getKol,
-  RIMULDAR: getCantlin,
+  RIMULDAR: getRimuldar,
   CANTLIN: getCantlin,
   SWAMP_CAVE: getSwampCave,
-  ERDRICK_CAVE: getSwampCave,
+  ERDRICK_CAVE: getErdrickCave,
   CHARLOCK_CASTLE: getCharlockCastle,
   HOLY_SHRINE: getHolyShrine
 };

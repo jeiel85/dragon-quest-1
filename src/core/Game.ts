@@ -409,6 +409,28 @@ export class Game {
       this.hero.x = targetX;
       this.hero.y = targetY;
       if (targetDir) this.hero.dir = targetDir;
+
+      // 무지개의 다리 가설 반영 (오버월드 마왕의 섬 앞)
+      if (this.currentMap.id === 'OVERWORLD' && this.hero.questFlags.bridgeCreated) {
+        this.currentMap.tiles[28][25] = TileType.BRIDGE;
+        this.currentMap.tiles[29][25] = TileType.BRIDGE;
+      }
+
+      // 이미 획득한 퀘스트 아이템 상자 opened 동기화
+      this.currentMap.chests.forEach(c => {
+        if (c.item && this.hero.inventory.some(i => i.id === c.item)) {
+          c.opened = true;
+        }
+      });
+
+      // 처치된 보스 맵에서 정리
+      if (this.currentMap.id === 'SWAMP_CAVE' && this.hero.questFlags.dragonDefeated) {
+        this.currentMap.npcs = this.currentMap.npcs.filter(n => n.id !== 'dragon_boss');
+      }
+      if (this.currentMap.id === 'OVERWORLD' && this.hero.questFlags.golemDefeated) {
+        this.currentMap.npcs = this.currentMap.npcs.filter(n => n.id !== 'golem_guard');
+      }
+
       this.audio.playBgm(this.currentMap.bgm);
     }
   }
@@ -754,27 +776,30 @@ export class Game {
     this.ctx.fillStyle = '#000010';
     this.ctx.fillRect(0, 0, 256, 240);
 
-    this.ctx.font = '14px "Press Start 2P", monospace';
+    this.ctx.font = '13px "Press Start 2P", monospace';
     this.ctx.fillStyle = '#ffd700';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText('PEACE RESTORED!', 128, 50);
+    this.ctx.fillText('PEACE RESTORED!', 128, 45);
 
-    this.ctx.font = '11px "DotGothic16", monospace';
+    this.ctx.font = '9px "DotGothic16", monospace';
     this.ctx.fillStyle = '#ffffff';
-    this.ctx.fillText('용왕은 쓰러지고, 알레프갈드에 찬란한 평화가 찾아왔도다!', 128, 85);
-    this.ctx.fillText('로라 공주와 로파 대왕, 백성들은 용사를 영원히 찬양하리라!', 128, 110);
+    this.ctx.fillText('마왕 용왕은 쓰러지고,', 128, 70);
+    this.ctx.fillText('알레프갈드에 찬란한 빛과 평화가 찾아왔도다!', 128, 86);
+    this.ctx.fillText('로라 공주와 로파 대왕, 온 백성이', 128, 104);
+    this.ctx.fillText('전설의 용사 로토의 위업을 영원히 찬양하리라!', 128, 120);
 
     // 공주와 용사 나란히
     const heroSprite = this.sprites.getHeroSprite('down', 0);
     const princessSprite = this.sprites.getNPCSprite('princess');
-    this.ctx.drawImage(heroSprite, 110, 135, 24, 24);
-    this.ctx.drawImage(princessSprite, 138, 135, 24, 24);
+    this.ctx.drawImage(heroSprite, 108, 138, 20, 20);
+    this.ctx.drawImage(princessSprite, 132, 138, 20, 20);
 
-    this.ctx.fillStyle = '#ff69b4';
-    this.ctx.fillText('로라 공주: "용사님과 함께라면 어디든 가겠어요!"', 128, 180);
+    this.ctx.fillStyle = '#ff9ff3';
+    this.ctx.fillText('로라 공주: "용사님과 함께라면 어디든 가겠어요!"', 128, 178);
 
+    this.ctx.font = '11px "Press Start 2P", monospace';
     this.ctx.fillStyle = '#7bed9f';
-    this.ctx.fillText('~ THE END ~', 128, 215);
+    this.ctx.fillText('~ THE END ~', 128, 212);
     this.ctx.textAlign = 'left';
   }
 }
