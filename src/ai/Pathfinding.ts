@@ -27,6 +27,16 @@ export class Pathfinding {
       return false;
     }
 
+    // NPC가 서 있는 타일은 통과 불가 (대화는 목표 지점에서만 발생)
+    if (map.npcs.some(n => n.x === x && n.y === y)) {
+      return false;
+    }
+
+    // 워프 타일은 목표 지점이 아닌 경우 통과 불가 (실수로 다른 맵으로 이동 방지)
+    if (map.warps.some(w => w.x === x && w.y === y)) {
+      return false;
+    }
+
     // 로토의 갑옷이 없으면 배리어는 지나갈 수 있으나 가중치 증가
     return true;
   }

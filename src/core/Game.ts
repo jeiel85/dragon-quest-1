@@ -9,7 +9,7 @@ import { Hero } from '../entities/Hero';
 import { Sprites } from '../graphics/Sprites';
 import { WindowRenderer } from '../ui/WindowRenderer';
 import { AutoPilot } from '../ai/AutoPilot';
-import { Direction, GameScene, MapType, TileType } from './Types';
+import { Direction, GameScene, Item, MapType, TileType } from './Types';
 import { Input } from './Input';
 
 export class Game {
@@ -30,6 +30,9 @@ export class Game {
   public dialogueQueue: string[] = [];
   public currentDialogueText: string = '';
   public currentNpcAction?: string;
+
+  // 이미 연 보물상자 (맵 재생성 시에도 opened 유지)
+  private openedChestIds = new Set<string>();
 
   // 배속 및 루프 타이머
   public gameSpeed: number = 1; // 1x, 2x, 5x
@@ -372,12 +375,9 @@ export class Game {
     }
 
     if (npc.action === 'dragonlord') {
-      // 보스 결전 트리거!
-      if (npc.id === 'dragon_boss') {
-        this.startBossBattle('green_dragon');
-      } else if (npc.id === 'dragonlord_boss') {
-        this.startBossBattle('dragonlord_1');
-      }
+      // 보스 결전: 먼저 대화를 보여준 뒤 전투 시작
+      this.currentNpcAction = npc.id === 'dragon_boss' ? 'start_green_dragon' : 'start_dragonlord';
+      this.showDialogue(npc.dialog);
       return;
     }
 
@@ -392,39 +392,58 @@ export class Game {
 
   // 상점 자동/수동 거래
   private handleShopTransaction() {
-    const hero = this.gameSpeed > 1 ? this.hero : this.hero;
-    // 골드 상황에 따른 최적 장비 구매
-    if (this.hero.stats.gold >= 1500 && this.hero.equipment.weapon?.id !== 'steel_sword' && this.hero.equipment.weapon?.id !== 'flame_sword' && this.hero.equipment.weapon?.id !== 'erdrick_sword') {
-      this.hero.stats.gold -= 1500;
-      this.hero.equip(ITEMS.steel_sword);
-      this.audio.playChest();
-      this.showDialogue(['[강철검]을 1500G에 구입하여 장비했다!', '공격력이 대폭 상승했다!']);
-    } else if (this.hero.stats.gold >= 1000 && (!this.hero.equipment.armor || this.hero.equipment.armor.power! < 16)) {
-      this.hero.stats.gold -= 1000;
-      this.hero.equip(ITEMS.iron_armor);
-      this.audio.playChest();
-      this.showDialogue(['[철갑옷]을 1000G에 구입하여 장비했다!', '방어력이 대폭 상승했다!']);
-    } else if (this.hero.stats.gold >= 180 && !this.hero.equipment.weapon) {
-      this.hero.stats.gold -= 180;
-      this.hero.equip(ITEMS.copper_sword);
-      this.audio.playChest();
-      this.showDialogue(['[구리검]을 180G에 구입하여 장비했다!']);
-    } else if (this.hero.stats.gold >= 24 && this.hero.stats.herbs < 4) {
-      this.hero.stats.gold -= 24;
-      this.hero.stats.herbs++;
+    const hero = this.hero;
+    const w = hero.equipment.weapon?.power || 0;
+    const a = hero.equipment.armor?.power || 0;
+    const s = hero.equipment.shield?.power || 0;
+
+    // 비싼 것부터 살 수 있는 최고 업그레이드 구매 (장비 티어 순)
+    const upgrades: { item: Item; cost: number; cond: boolean }[] = [
+      { item: ITEMS.flame_sword, cost: 9800, cond: w < 28 },     // 화염의 검
+      { item: ITEMS.magic_armor, cost: 7700, cond: a < 24 },     // 마법 갑옷
+      { item: ITEMS.silver_shield, cost: 14800, cond: s < 20 },  // 미키의 은방패
+      { item: ITEMS.steel_sword, cost: 1500, cond: w < 20 },     // 강철검
+      { item: ITEMS.iron_armor, cost: 1000, cond: a < 16 },      // 철갑옷
+      { item: ITEMS.iron_shield, cost: 800, cond: s < 10 },      // 철 방패
+      { item: ITEMS.iron_axe, cost: 560, cond: w < 15 },         // 철도끼
+      { item: ITEMS.chain_mail, cost: 300, cond: a < 10 },       // 사슬 갑옷
+      { item: ITEMS.copper_sword, cost: 180, cond: w < 10 },     // 구리검
+      { item: ITEMS.leather_shield, cost: 90, cond: s < 4 },     // 가죽 방패
+      { item: ITEMS.leather_armor, cost: 70, cond: a < 4 },      // 가죽 갑옷
+      { item: ITEMS.club, cost: 60, cond: w < 4 },               // 곤봉
+      { item: ITEMS.clothes, cost: 20, cond: a < 2 },            // 천옷
+      { item: ITEMS.bamboo_pole, cost: 10, cond: w < 2 }         // 대나무 막대
+    ];
+
+    for (const up of upgrades) {
+      if (up.cond && hero.stats.gold >= up.cost) {
+        hero.stats.gold -= up.cost;
+        hero.equip(up.item);
+        this.audio.playChest();
+        this.showDialogue([`[${up.item.name}]을(를) ${up.cost}G에 구입하여 장비했다!`, '능력치가 상승했다!']);
+        return;
+      }
+    }
+
+    // 장비가 충분하면 약초 보충
+    if (hero.stats.gold >= 24 && hero.stats.herbs < 4) {
+      hero.stats.gold -= 24;
+      hero.stats.herbs++;
       this.audio.playChest();
       this.showDialogue(['[약초]를 24G에 구입했다!']);
-    } else {
-      this.showDialogue([
-        '무기상인: "골드를 더 모아오시면 더 좋은 무기를 드릴 수 있습니다!"',
-        `현재 소지 골드: ${this.hero.stats.gold}G`
-      ]);
+      return;
     }
+
+    this.showDialogue([
+      '무기상인: "골드를 더 모아오시면 더 좋은 무기를 드릴 수 있습니다!"',
+      `현재 소지 골드: ${hero.stats.gold}G`
+    ]);
   }
 
   // 보물상자 열기
   private openChest(chest: any) {
     chest.opened = true;
+    this.openedChestIds.add(chest.id);
     this.audio.playChest();
 
     if (chest.gold) {
@@ -434,6 +453,10 @@ export class Game {
       const item = ITEMS[chest.item];
       if (item) {
         this.hero.addItem(item);
+        // 마법의 열쇠는 문 개방용 keys 스탯으로도 반영
+        if (chest.item === 'magic_key') {
+          this.hero.stats.keys++;
+        }
         this.showDialogue([`보물상자를 열었다!`, `전설의 [${item.name}]을(를) 획득했다!!`]);
       }
     }
@@ -457,7 +480,8 @@ export class Game {
 
       // 이미 획득한 퀘스트 아이템 상자 opened 동기화
       this.currentMap.chests.forEach(c => {
-        if (c.item && this.hero.inventory.some(i => i.id === c.item)) {
+        if (this.openedChestIds.has(c.id) ||
+            (c.item && this.hero.inventory.some(i => i.id === c.item))) {
           c.opened = true;
         }
       });
@@ -489,9 +513,14 @@ export class Game {
         pool = ENCOUNTER_TABLES['swamp_field'];
       } else if (this.hero.x > 35) {
         pool = ENCOUNTER_TABLES['forest_mountains'];
+      } else if (this.hero.x < 30 && this.hero.y < 30) {
+        // 성(25,26)과 라다톰(27,26) 주변은 약한 몬스터만 출현
+        pool = ENCOUNTER_TABLES['near_tantegel'];
       } else {
         pool = ENCOUNTER_TABLES['mid_field'];
       }
+    } else if (this.currentMap.encounterZone) {
+      pool = ENCOUNTER_TABLES[this.currentMap.encounterZone] || pool;
     } else if (this.currentMap.isDungeon) {
       pool = ENCOUNTER_TABLES['charlock_area'];
     }
@@ -508,7 +537,9 @@ export class Game {
         this.scene = 'FIELD';
         this.audio.playBgm(this.currentMap.bgm);
         // 용왕 2단계 격파 시 엔딩 트리거!
-        if (monsterId === 'dragonlord_2' && result === 'win') {
+        // (배틀은 dragonlord_1로 시작하고 2단계는 전투 중 변신하므로
+        //  현재 몬스터 id로 판정해야 함)
+        if (this.battleSystem?.monster?.id === 'dragonlord_2' && result === 'win') {
           this.triggerEnding();
         }
       } else if (result === 'lose') {
@@ -584,6 +615,18 @@ export class Game {
       this.currentDialogueText = this.dialogueQueue.shift()!;
     } else {
       this.currentDialogueText = '';
+      // 대화가 끝난 뒤 예약된 액션(보스전 등) 실행
+      if (this.currentNpcAction) {
+        const action = this.currentNpcAction;
+        this.currentNpcAction = undefined;
+        if (action === 'start_green_dragon') {
+          this.startBossBattle('green_dragon');
+          return;
+        } else if (action === 'start_dragonlord') {
+          this.startBossBattle('dragonlord_1');
+          return;
+        }
+      }
       if (this.scene === 'INTRO_DIALOG' || this.scene === 'DIALOG') {
         this.scene = 'FIELD';
       }
