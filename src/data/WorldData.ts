@@ -52,14 +52,14 @@ function getTantegelThrone(): GameMap {
     tiles[y][8] = TileType.STONE_FLOOR;
   }
 
-  // 보물 창고 방
+  // 보물 창고 방 (원작처럼 열쇠 없이 진입 가능한 개방형 창고)
   for (let x = 11; x <= 14; x++) {
     tiles[2][x] = TileType.BRICK_WALL;
     tiles[6][x] = TileType.BRICK_WALL;
   }
   tiles[3][11] = TileType.BRICK_WALL;
   tiles[4][11] = TileType.BRICK_WALL;
-  tiles[5][11] = TileType.DOOR;
+  tiles[5][11] = TileType.STONE_FLOOR;
 
   // 보물상자
   tiles[3][13] = TileType.CHEST;
@@ -115,7 +115,7 @@ function getTantegelThrone(): GameMap {
         id: 'guard_2',
         name: '근위병',
         x: 10,
-        y: 5,
+        y: 6,
         dir: 'left',
         spriteIndex: 1,
         map: 'TANTEGEL_THRONE',
@@ -275,7 +275,7 @@ function getBrecconary(): GameMap {
       tiles[y][x] = TileType.STONE_FLOOR;
     }
   }
-  tiles[12][14] = TileType.DOOR;
+  tiles[12][14] = TileType.STONE_FLOOR; // 열쇠 상점은 열쇠 없이 진입 가능해야 함
   tiles[14][15] = TileType.SHOP_COUNTER;
 
   return {
@@ -446,8 +446,8 @@ function getSwampCave(): GameMap {
   tiles[10][6] = TileType.STONE_FLOOR; // 통로
   tiles[16][12] = TileType.STONE_FLOOR;
 
-  // 감옥 방 (동쪽)
-  tiles[8][15] = TileType.DOOR;
+  // 감옥 방 (동쪽) - 드래곤 격파 후 진입 가능해야 하므로 문 없음
+  tiles[8][15] = TileType.STONE_FLOOR;
 
   // 북쪽 출구 및 남쪽 출구 계단
   tiles[2][2] = TileType.STAIRS_UP;
@@ -796,8 +796,8 @@ function getOverworld(): GameMap {
   // 2. 라다톰 마을 (x: 27, y: 26)
   tiles[26][27] = TileType.TOWN;
 
-  // 3. 가라이 마을 (x: 10, y: 10)
-  tiles[10][10] = TileType.TOWN;
+  // 3. 가라이 마을 (x: 14, y: 14) - 서쪽 산맥 동쪽 대륙 위
+  tiles[14][14] = TileType.TOWN;
 
   // 4. 마이라 마을 (x: 42, y: 12)
   tiles[12][42] = TileType.TOWN;
@@ -822,7 +822,7 @@ function getOverworld(): GameMap {
   tiles[36][45] = TileType.TOWN;
 
   // 다리들
-  tiles[25][28] = TileType.BRIDGE;
+  tiles[28][25] = TileType.BRIDGE; // 류오의 섬 북쪽 연결 다리 (탄타겔 성에서 진입)
   tiles[37][30] = TileType.BRIDGE;
   tiles[41][34] = TileType.BRIDGE;
   tiles[35][43] = TileType.BRIDGE; // 리물다르 섬 연결 다리
@@ -850,7 +850,7 @@ function getOverworld(): GameMap {
       // 라다톰 마을 진입
       { x: 27, y: 26, targetMap: 'BRECCONARY', targetX: 1, targetY: 10 },
       // 가라이 마을 진입
-      { x: 10, y: 10, targetMap: 'GARINHAM', targetX: 9, targetY: 18 },
+      { x: 14, y: 14, targetMap: 'GARINHAM', targetX: 9, targetY: 18 },
       // 마이라 마을 진입
       { x: 42, y: 12, targetMap: 'KOL', targetX: 9, targetY: 16 },
       // 로토의 동굴 진입
@@ -946,8 +946,9 @@ function getGarinham(): GameMap {
     tiles,
     bgm: 'TOWN',
     warps: [
-      { x: 9, y: 19, targetMap: 'OVERWORLD', targetX: 10, targetY: 11 },
-      { x: 10, y: 19, targetMap: 'OVERWORLD', targetX: 10, targetY: 11 }
+      // 가라이 마을 출구 → 오버월드 (10,11)은 대륙 밖 바다라 (14,15)로 수정
+      { x: 9, y: 19, targetMap: 'OVERWORLD', targetX: 14, targetY: 15 },
+      { x: 10, y: 19, targetMap: 'OVERWORLD', targetX: 14, targetY: 15 }
     ],
     npcs: [
       {
